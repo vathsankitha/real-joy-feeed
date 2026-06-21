@@ -600,8 +600,8 @@ function CommentInput({
       _post_id: postId,
       _content: t,
       _hidden: scan.hidden,
-      _category: scan.category,
-      _severity: scan.severity,
+      _category: scan.category as string,
+      _severity: scan.severity as string,
     });
 
     if (error) {
