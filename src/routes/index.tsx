@@ -476,8 +476,12 @@ function Feed({ userId, username }: { userId: string; username: string }) {
           username={username}
           banned={!!strike?.banned}
           onAfterStrike={loadStrike}
+          likeCount={likesByPost[p.id] ?? 0}
+          liked={likedByMe.has(p.id)}
+          onToggleLike={() => toggleLike(p.id)}
         />
       ))}
+
     </>
   );
 }
