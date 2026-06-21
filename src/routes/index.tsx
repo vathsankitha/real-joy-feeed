@@ -586,7 +586,7 @@ function PostCard({
           <div style={{ fontSize: 11, color: "var(--sub)" }}>{timeAgo(post.created_at)}</div>
         </div>
         {isOwner && (
-          <button onClick={deletePost} title="Delete post" style={iconBtn}>🗑️</button>
+          <button onClick={deletePost} aria-label="Delete post" title="Delete post" style={iconBtn}>🗑️</button>
         )}
       </div>
       {post.content && <div style={{ padding: "0 14px 12px", fontSize: 13, lineHeight: 1.55, whiteSpace: "pre-wrap" }}>{post.content}</div>}
