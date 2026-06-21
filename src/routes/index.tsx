@@ -218,7 +218,7 @@ function AuthScreen() {
 // Main app shell (feed + hidden admin)
 // ──────────────────────────────────────────────────────────────
 function Main({ userId, username }: { userId: string; username: string }) {
-  const [tab, setTab] = useState<"feed" | "admin">("feed");
+  const [tab, setTab] = useState<"feed" | "profile" | "admin">("feed");
   const [adminAuthed, setAdminAuthed] = useState(false);
   const [adminPw, setAdminPw] = useState<string | null>(null);
   const [adminPrompt, setAdminPrompt] = useState(false);
@@ -229,7 +229,6 @@ function Main({ userId, username }: { userId: string; username: string }) {
 
   return (
     <div style={{ minHeight: "100vh" }}>
-      {/* NAV */}
       <div style={{
         background: "var(--card)", borderBottom: "1px solid var(--border)",
         padding: "0 16px", display: "flex", alignItems: "center", position: "sticky",
@@ -240,6 +239,7 @@ function Main({ userId, username }: { userId: string; username: string }) {
           CyberGuard
         </div>
         <button onClick={() => setTab("feed")} style={tabBtn(tab === "feed")}>Feed</button>
+        <button onClick={() => setTab("profile")} style={tabBtn(tab === "profile")}>Profile</button>
         <button
           onClick={() => { if (adminAuthed) setTab("admin"); else setAdminPrompt(true); }}
           style={tabBtn(tab === "admin")}
@@ -249,9 +249,9 @@ function Main({ userId, username }: { userId: string; username: string }) {
         <button onClick={signOut} title="Sign out" style={{ marginLeft: 8, background: "none", border: "none", fontSize: 18, cursor: "pointer", color: "var(--sub)", padding: "10px 6px" }}>⎋</button>
       </div>
 
-      {/* PAGE */}
       <div style={{ maxWidth: 760, margin: "0 auto", padding: "18px 14px 60px" }}>
         {tab === "feed" && <Feed userId={userId} username={username} />}
+        {tab === "profile" && <Profile userId={userId} username={username} />}
         {tab === "admin" && adminAuthed && adminPw && <Admin password={adminPw} />}
       </div>
 
@@ -267,6 +267,73 @@ function Main({ userId, username }: { userId: string; username: string }) {
         />
       )}
     </div>
+  );
+}
+
+function Profile({ userId, username }: { userId: string; username: string }) {
+  const [strike, setStrike] = useState<StrikeRow | null>(null);
+  const [postCount, setPostCount] = useState<number>(0);
+  const [commentCount, setCommentCount] = useState<number>(0);
+  const [loading, setLoading] = useState(true);
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    const [{ data: s }, { count: pc }, { count: cc }] = await Promise.all([
+      supabase.from("strikes").select("*").eq("user_id", userId).maybeSingle(),
+      supabase.from("posts").select("*", { count: "exact", head: true }).eq("user_id", userId),
+      supabase.from("comments").select("*", { count: "exact", head: true }).eq("user_id", userId),
+    ]);
+    setStrike((s as StrikeRow) ?? { user_id: userId, username, count: 0, banned: false });
+    setPostCount(pc ?? 0);
+    setCommentCount(cc ?? 0);
+    setLoading(false);
+  }, [userId, username]);
+
+  useEffect(() => { load(); }, [load]);
+
+  if (loading) return <div style={{ padding: 28, textAlign: "center", color: "var(--sub)", fontSize: 13 }}>Loading…</div>;
+
+  const count = strike?.count ?? 0;
+  const banned = !!strike?.banned;
+
+  return (
+    <>
+      <div style={{ ...card(), padding: 20, marginBottom: 16, display: "flex", alignItems: "center", gap: 14 }}>
+        <Avatar name={username} size={56} />
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ fontSize: 18, fontWeight: 700 }}>@{username}</div>
+          <div style={{ fontSize: 12, color: "var(--sub)", marginTop: 4 }}>
+            {banned ? <span style={pill("#fee2e2", "#7f1d1d")}>Banned</span> : <span style={pill("#f0fdf4", "#166534")}>Active</span>}
+          </div>
+        </div>
+      </div>
+
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 10, marginBottom: 16 }}>
+        <Stat label="Posts" value={postCount} />
+        <Stat label="Comments" value={commentCount} />
+        <Stat label="Strikes" value={count} color={count >= 2 ? "#ef4444" : count > 0 ? "#f59e0b" : undefined} />
+      </div>
+
+      <div style={{ ...card(), padding: 16, marginBottom: 16 }}>
+        <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 10 }}>Strike progress</div>
+        <div style={{ display: "flex", gap: 8, marginBottom: 8 }}>
+          {[0, 1, 2].map((i) => (
+            <div key={i} style={{ flex: 1, height: 10, borderRadius: 99, background: i < count ? "#ef4444" : "#e5e7eb" }} />
+          ))}
+        </div>
+        <div style={{ fontSize: 12, color: "var(--sub)" }}>
+          {banned
+            ? "You have been banned for repeated violations."
+            : count === 0
+              ? "Clean record — keep it up!"
+              : `${count}/3 strikes used. ${3 - count} more will result in an automatic ban.`}
+        </div>
+      </div>
+
+      {banned && (
+        <div style={banner("danger")}>🚫 Your account is banned. You can read the feed but cannot post or comment.</div>
+      )}
+    </>
   );
 }
 
