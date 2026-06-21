@@ -233,7 +233,10 @@ function Main({ userId, username }: { userId: string; username: string }) {
 
   return (
     <div style={{ minHeight: "100vh" }}>
-      <div style={{
+      <h1 style={{ position: "absolute", width: 1, height: 1, padding: 0, margin: -1, overflow: "hidden", clip: "rect(0,0,0,0)", whiteSpace: "nowrap", border: 0 }}>
+        CyberGuard — AI Moderated Community Feed
+      </h1>
+      <header style={{
         background: "var(--card)", borderBottom: "1px solid var(--border)",
         padding: "0 16px", display: "flex", alignItems: "center", position: "sticky",
         top: 0, zIndex: 100,
@@ -250,14 +253,14 @@ function Main({ userId, username }: { userId: string; username: string }) {
         >
           Admin
         </button>
-        <button onClick={signOut} title="Sign out" style={{ marginLeft: 8, background: "none", border: "none", fontSize: 18, cursor: "pointer", color: "var(--sub)", padding: "10px 6px" }}>⎋</button>
-      </div>
+        <button onClick={signOut} aria-label="Sign out" title="Sign out" style={{ marginLeft: 8, background: "none", border: "none", fontSize: 18, cursor: "pointer", color: "var(--sub)", padding: "10px 6px" }}>⎋</button>
+      </header>
 
-      <div style={{ maxWidth: 760, margin: "0 auto", padding: "18px 14px 60px" }}>
+      <main style={{ maxWidth: 760, margin: "0 auto", padding: "18px 14px 60px" }}>
         {tab === "feed" && <Feed userId={userId} username={username} />}
         {tab === "profile" && <Profile userId={userId} username={username} />}
         {tab === "admin" && adminAuthed && adminPw && <Admin password={adminPw} />}
-      </div>
+      </main>
 
       {adminPrompt && (
         <AdminLogin
