@@ -596,14 +596,12 @@ function CommentInput({
     setNotice(null);
     const scan = scanComment(t);
 
-    const { error } = await supabase.from("comments").insert({
-      post_id: postId,
-      user_id: userId,
-      username,
-      content: t,
-      hidden: scan.hidden,
-      category: scan.category,
-      severity: scan.severity,
+    const { data, error } = await supabase.rpc("submit_moderated_comment", {
+      _post_id: postId,
+      _content: t,
+      _hidden: scan.hidden,
+      _category: scan.category as string,
+      _severity: scan.severity as string,
     });
 
     if (error) {
@@ -612,28 +610,13 @@ function CommentInput({
       return;
     }
 
-    // Log
-    await supabase.from("moderation_log").insert({
-      user_id: userId,
-      username,
-      content: t,
-      action: scan.hidden ? "hidden" : "safe",
-      category: scan.category,
-      severity: scan.severity,
-    });
-
-    if (scan.hidden) {
-      // Increment strike
-      const { data: row } = await supabase.from("strikes").select("*").eq("user_id", userId).maybeSingle();
-      const newCount = (row?.count ?? 0) + 1;
-      const banned = newCount >= 3;
-      if (row) {
-        await supabase.from("strikes").update({ count: newCount, banned, username, updated_at: new Date().toISOString() }).eq("user_id", userId);
-      } else {
-        await supabase.from("strikes").insert({ user_id: userId, username, count: newCount, banned });
-      }
+    const result = (data ?? {}) as { hidden?: boolean; count?: number; banned?: boolean };
+    if (result.hidden) {
       onAfterStrike();
-      setNotice({ type: "D", msg: `Comment hidden — ${scan.category}. Strike ${newCount}/3${banned ? " — you are now banned." : "."}` });
+      setNotice({
+        type: "D",
+        msg: `Comment hidden — ${scan.category}. Strike ${result.count ?? 0}/3${result.banned ? " — you are now banned." : "."}`,
+      });
     } else {
       setNotice({ type: "S", msg: "Comment posted." });
       setTimeout(() => setNotice(null), 2500);
