@@ -343,12 +343,30 @@ function Profile({ userId, username }: { userId: string; username: string }) {
 function Feed({ userId, username }: { userId: string; username: string }) {
   const [posts, setPosts] = useState<Post[]>([]);
   const [commentsByPost, setCommentsByPost] = useState<Record<string, Comment[]>>({});
+  const [likesByPost, setLikesByPost] = useState<Record<string, number>>({});
+  const [likedByMe, setLikedByMe] = useState<Set<string>>(new Set());
   const [strike, setStrike] = useState<StrikeRow | null>(null);
 
   const loadStrike = useCallback(async () => {
     const { data } = await supabase.from("strikes").select("*").eq("user_id", userId).maybeSingle();
     setStrike((data as StrikeRow) ?? { user_id: userId, username, count: 0, banned: false });
   }, [userId, username]);
+
+  const toggleLike = useCallback(async (postId: string) => {
+    const liked = likedByMe.has(postId);
+    // optimistic
+    setLikedByMe((prev) => {
+      const n = new Set(prev);
+      if (liked) n.delete(postId); else n.add(postId);
+      return n;
+    });
+    setLikesByPost((prev) => ({ ...prev, [postId]: Math.max(0, (prev[postId] ?? 0) + (liked ? -1 : 1)) }));
+    if (liked) {
+      await supabase.from("post_likes").delete().eq("post_id", postId).eq("user_id", userId);
+    } else {
+      await supabase.from("post_likes").insert({ post_id: postId, user_id: userId });
+    }
+  }, [likedByMe, userId]);
 
   useEffect(() => {
     let mounted = true;
@@ -358,10 +376,23 @@ function Feed({ userId, username }: { userId: string; username: string }) {
       setPosts((ps as Post[]) ?? []);
       const ids = (ps ?? []).map((p) => p.id);
       if (ids.length) {
-        const { data: cs } = await supabase.from("comments").select("*").in("post_id", ids).order("created_at", { ascending: true });
+        const [{ data: cs }, { data: ls }] = await Promise.all([
+          supabase.from("comments").select("*").in("post_id", ids).order("created_at", { ascending: true }),
+          supabase.from("post_likes").select("post_id,user_id").in("post_id", ids),
+        ]);
         const grouped: Record<string, Comment[]> = {};
         for (const c of (cs as Comment[]) ?? []) (grouped[c.post_id] ||= []).push(c);
-        if (mounted) setCommentsByPost(grouped);
+        const counts: Record<string, number> = {};
+        const mine = new Set<string>();
+        for (const l of (ls as { post_id: string; user_id: string }[]) ?? []) {
+          counts[l.post_id] = (counts[l.post_id] ?? 0) + 1;
+          if (l.user_id === userId) mine.add(l.post_id);
+        }
+        if (mounted) {
+          setCommentsByPost(grouped);
+          setLikesByPost(counts);
+          setLikedByMe(mine);
+        }
       }
     })();
     loadStrike();
@@ -395,12 +426,25 @@ function Feed({ userId, username }: { userId: string; username: string }) {
           return next;
         });
       })
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "post_likes" }, (payload) => {
+        const nl = payload.new as { post_id: string; user_id: string };
+        setLikesByPost((prev) => ({ ...prev, [nl.post_id]: (prev[nl.post_id] ?? 0) + 1 }));
+        if (nl.user_id === userId) setLikedByMe((prev) => new Set(prev).add(nl.post_id));
+      })
+      .on("postgres_changes", { event: "DELETE", schema: "public", table: "post_likes" }, (payload) => {
+        const ol = payload.old as { post_id: string; user_id: string };
+        setLikesByPost((prev) => ({ ...prev, [ol.post_id]: Math.max(0, (prev[ol.post_id] ?? 0) - 1) }));
+        if (ol.user_id === userId) setLikedByMe((prev) => {
+          const n = new Set(prev); n.delete(ol.post_id); return n;
+        });
+      })
       .subscribe();
     return () => {
       mounted = false;
       supabase.removeChannel(ch);
     };
-  }, [loadStrike]);
+  }, [loadStrike, userId]);
+
 
   return (
     <>
@@ -432,8 +476,12 @@ function Feed({ userId, username }: { userId: string; username: string }) {
           username={username}
           banned={!!strike?.banned}
           onAfterStrike={loadStrike}
+          likeCount={likesByPost[p.id] ?? 0}
+          liked={likedByMe.has(p.id)}
+          onToggleLike={() => toggleLike(p.id)}
         />
       ))}
+
     </>
   );
 }
@@ -511,9 +559,10 @@ function Composer({ userId, username, banned }: { userId: string; username: stri
 }
 
 function PostCard({
-  post, comments, userId, username, banned, onAfterStrike,
+  post, comments, userId, username, banned, onAfterStrike, likeCount, liked, onToggleLike,
 }: {
   post: Post; comments: Comment[]; userId: string; username: string; banned: boolean; onAfterStrike: () => void;
+  likeCount: number; liked: boolean; onToggleLike: () => void;
 }) {
   const isOwner = post.user_id === userId;
   async function deletePost() {
@@ -536,6 +585,25 @@ function PostCard({
       {post.content && <div style={{ padding: "0 14px 12px", fontSize: 13, lineHeight: 1.55, whiteSpace: "pre-wrap" }}>{post.content}</div>}
       {post.image_url && <img src={post.image_url} alt="" style={{ width: "100%", display: "block" }} />}
 
+      <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 14px", borderTop: "1px solid #f0f0f0" }}>
+        <button
+          onClick={onToggleLike}
+          style={{
+            display: "inline-flex", alignItems: "center", gap: 6,
+            background: liked ? "#fee2e2" : "#f6f7f9",
+            color: liked ? "#b91c1c" : "#333",
+            border: "none", borderRadius: 99, padding: "6px 12px",
+            fontSize: 13, fontWeight: 600, cursor: "pointer",
+          }}
+        >
+          <span style={{ fontSize: 14 }}>{liked ? "❤️" : "🤍"}</span>
+          <span>{likeCount}</span>
+        </button>
+        <span style={{ fontSize: 12, color: "var(--sub)" }}>
+          {likeCount === 1 ? "1 like" : `${likeCount} likes`}
+        </span>
+      </div>
+
       <div style={{ borderTop: "1px solid #f0f0f0", padding: "10px 14px", display: "flex", flexDirection: "column", gap: 8 }}>
         {comments.length === 0 && <div style={{ fontSize: 11, color: "var(--sub)" }}>No comments yet.</div>}
         {comments.map((c) => <CommentRow key={c.id} c={c} currentUserId={userId} />)}
@@ -544,6 +612,7 @@ function PostCard({
     </div>
   );
 }
+
 
 function CommentRow({ c, currentUserId }: { c: Comment; currentUserId: string }) {
   const isOwner = c.user_id === currentUserId;
