@@ -468,7 +468,7 @@ function CommentRow({ c }: { c: Comment }) {
         <div style={{ display: "flex", alignItems: "center", gap: 7, flexWrap: "wrap" }}>
           <span style={{ fontSize: 14 }}>🚫</span>
           <span style={{ fontSize: 12, fontWeight: 600, color: "var(--danger-text)", flex: 1 }}>
-            Comment hidden by {`{`}@{c.username}{`}`} — {c.category}
+            Comment hidden from @{c.username} — {c.category}
           </span>
           <span style={pill(c.severity === "severe" ? "#fee2e2" : c.severity === "moderate" ? "#fed7aa" : "#fef9c3", c.severity === "severe" ? "#7f1d1d" : c.severity === "moderate" ? "#7c2d12" : "#713f12")}>
             {c.severity}
