@@ -663,16 +663,13 @@ function CommentInput({
     if (!t || busy || banned) return;
     setBusy(true);
     setNotice(null);
-    const scan = scanComment(t);
 
-    const { error } = await supabase.from("comments").insert({
-      post_id: postId,
-      user_id: userId,
-      username,
-      content: t,
-      hidden: scan.hidden,
-      category: scan.category,
-      severity: scan.severity,
+    // Optional pre-check for instant UI feedback; the database re-scans server-side.
+    const preview = scanComment(t);
+
+    const { data, error } = await supabase.rpc("submit_comment", {
+      _post_id: postId,
+      _content: t,
     });
 
     if (error) {
@@ -681,28 +678,15 @@ function CommentInput({
       return;
     }
 
-    // Log
-    await supabase.from("moderation_log").insert({
-      user_id: userId,
-      username,
-      content: t,
-      action: scan.hidden ? "hidden" : "safe",
-      category: scan.category,
-      severity: scan.severity,
-    });
+    const result = (data ?? {}) as { hidden?: boolean; category?: string | null; count?: number; banned?: boolean };
+    const wasHidden = result.hidden ?? preview.hidden;
+    const cat = result.category ?? preview.category;
 
-    if (scan.hidden) {
-      // Increment strike
-      const { data: row } = await supabase.from("strikes").select("*").eq("user_id", userId).maybeSingle();
-      const newCount = (row?.count ?? 0) + 1;
-      const banned = newCount >= 3;
-      if (row) {
-        await supabase.from("strikes").update({ count: newCount, banned, username, updated_at: new Date().toISOString() }).eq("user_id", userId);
-      } else {
-        await supabase.from("strikes").insert({ user_id: userId, username, count: newCount, banned });
-      }
+    if (wasHidden) {
       onAfterStrike();
-      setNotice({ type: "D", msg: `Comment hidden — ${scan.category}. Strike ${newCount}/3${banned ? " — you are now banned." : "."}` });
+      const count = result.count ?? 0;
+      const isBanned = result.banned ?? false;
+      setNotice({ type: "D", msg: `Comment hidden — ${cat}. Strike ${count}/3${isBanned ? " — you are now banned." : "."}` });
     } else {
       setNotice({ type: "S", msg: "Comment posted." });
       setTimeout(() => setNotice(null), 2500);
