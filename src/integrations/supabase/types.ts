@@ -14,7 +14,152 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      comments: {
+        Row: {
+          category: string | null
+          content: string
+          created_at: string
+          hidden: boolean
+          id: string
+          post_id: string
+          severity: string | null
+          user_id: string
+          username: string
+        }
+        Insert: {
+          category?: string | null
+          content: string
+          created_at?: string
+          hidden?: boolean
+          id?: string
+          post_id: string
+          severity?: string | null
+          user_id: string
+          username: string
+        }
+        Update: {
+          category?: string | null
+          content?: string
+          created_at?: string
+          hidden?: boolean
+          id?: string
+          post_id?: string
+          severity?: string | null
+          user_id?: string
+          username?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "comments_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      moderation_log: {
+        Row: {
+          action: string
+          category: string | null
+          content: string
+          created_at: string
+          id: string
+          severity: string | null
+          user_id: string | null
+          username: string
+        }
+        Insert: {
+          action: string
+          category?: string | null
+          content: string
+          created_at?: string
+          id?: string
+          severity?: string | null
+          user_id?: string | null
+          username: string
+        }
+        Update: {
+          action?: string
+          category?: string | null
+          content?: string
+          created_at?: string
+          id?: string
+          severity?: string | null
+          user_id?: string | null
+          username?: string
+        }
+        Relationships: []
+      }
+      posts: {
+        Row: {
+          content: string
+          created_at: string
+          id: string
+          image_url: string | null
+          user_id: string
+          username: string
+        }
+        Insert: {
+          content?: string
+          created_at?: string
+          id?: string
+          image_url?: string | null
+          user_id: string
+          username: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          id?: string
+          image_url?: string | null
+          user_id?: string
+          username?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          created_at: string
+          id: string
+          username: string
+        }
+        Insert: {
+          created_at?: string
+          id: string
+          username: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          username?: string
+        }
+        Relationships: []
+      }
+      strikes: {
+        Row: {
+          banned: boolean
+          count: number
+          updated_at: string
+          user_id: string
+          username: string
+        }
+        Insert: {
+          banned?: boolean
+          count?: number
+          updated_at?: string
+          user_id: string
+          username: string
+        }
+        Update: {
+          banned?: boolean
+          count?: number
+          updated_at?: string
+          user_id?: string
+          username?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
