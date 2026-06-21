@@ -387,6 +387,14 @@ function Feed({ userId, username }: { userId: string; username: string }) {
           return { ...prev, [nc.post_id]: [...arr, nc] };
         });
       })
+      .on("postgres_changes", { event: "DELETE", schema: "public", table: "comments" }, (payload) => {
+        const old = payload.old as { id: string; post_id?: string };
+        setCommentsByPost((prev) => {
+          const next: Record<string, Comment[]> = {};
+          for (const k of Object.keys(prev)) next[k] = prev[k].filter((c) => c.id !== old.id);
+          return next;
+        });
+      })
       .subscribe();
     return () => {
       mounted = false;
