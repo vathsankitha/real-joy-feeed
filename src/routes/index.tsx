@@ -559,9 +559,10 @@ function Composer({ userId, username, banned }: { userId: string; username: stri
 }
 
 function PostCard({
-  post, comments, userId, username, banned, onAfterStrike,
+  post, comments, userId, username, banned, onAfterStrike, likeCount, liked, onToggleLike,
 }: {
   post: Post; comments: Comment[]; userId: string; username: string; banned: boolean; onAfterStrike: () => void;
+  likeCount: number; liked: boolean; onToggleLike: () => void;
 }) {
   const isOwner = post.user_id === userId;
   async function deletePost() {
@@ -584,6 +585,25 @@ function PostCard({
       {post.content && <div style={{ padding: "0 14px 12px", fontSize: 13, lineHeight: 1.55, whiteSpace: "pre-wrap" }}>{post.content}</div>}
       {post.image_url && <img src={post.image_url} alt="" style={{ width: "100%", display: "block" }} />}
 
+      <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 14px", borderTop: "1px solid #f0f0f0" }}>
+        <button
+          onClick={onToggleLike}
+          style={{
+            display: "inline-flex", alignItems: "center", gap: 6,
+            background: liked ? "#fee2e2" : "#f6f7f9",
+            color: liked ? "#b91c1c" : "#333",
+            border: "none", borderRadius: 99, padding: "6px 12px",
+            fontSize: 13, fontWeight: 600, cursor: "pointer",
+          }}
+        >
+          <span style={{ fontSize: 14 }}>{liked ? "❤️" : "🤍"}</span>
+          <span>{likeCount}</span>
+        </button>
+        <span style={{ fontSize: 12, color: "var(--sub)" }}>
+          {likeCount === 1 ? "1 like" : `${likeCount} likes`}
+        </span>
+      </div>
+
       <div style={{ borderTop: "1px solid #f0f0f0", padding: "10px 14px", display: "flex", flexDirection: "column", gap: 8 }}>
         {comments.length === 0 && <div style={{ fontSize: 11, color: "var(--sub)" }}>No comments yet.</div>}
         {comments.map((c) => <CommentRow key={c.id} c={c} currentUserId={userId} />)}
@@ -592,6 +612,7 @@ function PostCard({
     </div>
   );
 }
+
 
 function CommentRow({ c, currentUserId }: { c: Comment; currentUserId: string }) {
   const isOwner = c.user_id === currentUserId;
