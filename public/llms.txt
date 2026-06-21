@@ -1,0 +1,7 @@
+# CyberGuard
+
+> Real-time AI-moderated community feed. Posts and comments are scanned for harassment, hate speech, and self-harm content before they appear.
+
+## Pages
+
+- [Feed](/): The main community feed where signed-in users post, comment, and like. Includes a profile view showing strike count and ban status.

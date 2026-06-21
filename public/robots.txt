@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://real-joy-feeed.lovable.app/sitemap.xml
