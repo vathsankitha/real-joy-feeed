@@ -577,6 +577,7 @@ function CommentRow({ c, currentUserId }: { c: Comment; currentUserId: string })
         </div>
       </div>
       <span style={pill("#f0fdf4", "#166534")}>Safe</span>
+      {isOwner && <button onClick={del} title="Delete comment" style={iconBtnSm}>🗑️</button>}
     </div>
   );
 }
