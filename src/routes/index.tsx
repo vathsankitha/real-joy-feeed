@@ -8,12 +8,14 @@ import { fetchAdminData, adminSetBan } from "@/lib/admin.functions";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "CyberGuard — AI Moderated Feed" },
-      { name: "description", content: "Real-time moderated community feed with admin moderation log." },
+      { title: "CyberGuard — AI Moderated Community Feed" },
+      { name: "description", content: "Join CyberGuard's real-time AI-moderated community feed. Post, comment, and like while harassment and harmful content are hidden automatically." },
       { name: "viewport", content: "width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" },
-      { property: "og:title", content: "CyberGuard" },
-      { property: "og:description", content: "Real-time moderated community feed." },
+      { property: "og:title", content: "CyberGuard — AI Moderated Community Feed" },
+      { property: "og:description", content: "Post, comment, and like in a feed where harassment and harmful content are caught and hidden in real time." },
+      { property: "og:url", content: "https://real-joy-feeed.lovable.app/" },
     ],
+    links: [{ rel: "canonical", href: "https://real-joy-feeed.lovable.app/" }],
   }),
   component: App,
 });
