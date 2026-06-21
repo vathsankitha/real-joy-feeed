@@ -849,6 +849,8 @@ const btnGhost: React.CSSProperties = { background: "var(--bg)", border: "1px so
 const btnDangerSmall: React.CSSProperties = { background: "var(--danger-bg)", border: "1px solid var(--danger-border)", color: "var(--danger-text)", borderRadius: 8, padding: "5px 10px", fontSize: 11, fontWeight: 600, cursor: "pointer" };
 const btnSafeSmall: React.CSSProperties = { background: "var(--safe-bg)", border: "1px solid var(--safe-border)", color: "var(--safe-text)", borderRadius: 8, padding: "5px 10px", fontSize: 11, fontWeight: 600, cursor: "pointer" };
 const overlay: React.CSSProperties = { position: "fixed", inset: 0, background: "rgba(0,0,0,.45)", display: "flex", alignItems: "center", justifyContent: "center", padding: 20, zIndex: 200 };
+const iconBtn: React.CSSProperties = { background: "none", border: "none", cursor: "pointer", fontSize: 14, padding: 6, borderRadius: 6, color: "var(--sub)" };
+const iconBtnSm: React.CSSProperties = { background: "none", border: "none", cursor: "pointer", fontSize: 12, padding: 2, color: "var(--sub)" };
 
 function card(extra: React.CSSProperties = {}): React.CSSProperties {
   return { background: "var(--card)", border: "1px solid var(--border)", borderRadius: 14, ...extra };
