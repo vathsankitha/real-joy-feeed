@@ -165,7 +165,16 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      submit_moderated_comment: {
+        Args: {
+          _category: string
+          _content: string
+          _hidden: boolean
+          _post_id: string
+          _severity: string
+        }
+        Returns: Json
+      }
     }
     Enums: {
       [_ in never]: never
