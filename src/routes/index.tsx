@@ -515,28 +515,43 @@ function PostCard({
 }: {
   post: Post; comments: Comment[]; userId: string; username: string; banned: boolean; onAfterStrike: () => void;
 }) {
+  const isOwner = post.user_id === userId;
+  async function deletePost() {
+    if (!confirm("Delete this post?")) return;
+    const { error } = await supabase.from("posts").delete().eq("id", post.id);
+    if (error) alert(error.message);
+  }
   return (
     <div style={{ ...card(), marginBottom: 16, overflow: "hidden" }}>
       <div style={{ display: "flex", gap: 10, alignItems: "center", padding: "12px 14px 8px" }}>
         <Avatar name={post.username} size={34} />
-        <div>
+        <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ fontSize: 13, fontWeight: 600 }}>{post.username}</div>
           <div style={{ fontSize: 11, color: "var(--sub)" }}>{timeAgo(post.created_at)}</div>
         </div>
+        {isOwner && (
+          <button onClick={deletePost} title="Delete post" style={iconBtn}>🗑️</button>
+        )}
       </div>
       {post.content && <div style={{ padding: "0 14px 12px", fontSize: 13, lineHeight: 1.55, whiteSpace: "pre-wrap" }}>{post.content}</div>}
       {post.image_url && <img src={post.image_url} alt="" style={{ width: "100%", display: "block" }} />}
 
       <div style={{ borderTop: "1px solid #f0f0f0", padding: "10px 14px", display: "flex", flexDirection: "column", gap: 8 }}>
         {comments.length === 0 && <div style={{ fontSize: 11, color: "var(--sub)" }}>No comments yet.</div>}
-        {comments.map((c) => <CommentRow key={c.id} c={c} />)}
+        {comments.map((c) => <CommentRow key={c.id} c={c} currentUserId={userId} />)}
       </div>
       <CommentInput postId={post.id} userId={userId} username={username} banned={banned} onAfterStrike={onAfterStrike} />
     </div>
   );
 }
 
-function CommentRow({ c }: { c: Comment }) {
+function CommentRow({ c, currentUserId }: { c: Comment; currentUserId: string }) {
+  const isOwner = c.user_id === currentUserId;
+  async function del() {
+    if (!confirm("Delete this comment?")) return;
+    const { error } = await supabase.from("comments").delete().eq("id", c.id);
+    if (error) alert(error.message);
+  }
   if (c.hidden) {
     return (
       <div style={{ background: "var(--danger-bg)", border: "1px solid var(--danger-border)", borderRadius: 10, padding: "9px 11px" }}>
