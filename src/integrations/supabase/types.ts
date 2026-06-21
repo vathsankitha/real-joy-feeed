@@ -191,6 +191,11 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      scan_comment_text: { Args: { _content: string }; Returns: Json }
+      submit_comment: {
+        Args: { _content: string; _post_id: string }
+        Returns: Json
+      }
       submit_moderated_comment: {
         Args: {
           _category: string
