@@ -547,7 +547,7 @@ function Composer({ userId, username, banned }: { userId: string; username: stri
           {img && (
             <div style={{ position: "relative", marginTop: 8 }}>
               <img src={img} alt="" style={{ width: "100%", borderRadius: 10, display: "block" }} />
-              <button onClick={() => setImg(null)} style={{ position: "absolute", top: 6, right: 6, background: "rgba(0,0,0,.6)", color: "#fff", border: "none", borderRadius: 99, width: 26, height: 26, cursor: "pointer", fontSize: 14 }}>×</button>
+              <button onClick={() => setImg(null)} aria-label="Remove attached image" style={{ position: "absolute", top: 6, right: 6, background: "rgba(0,0,0,.6)", color: "#fff", border: "none", borderRadius: 99, width: 26, height: 26, cursor: "pointer", fontSize: 14 }}>×</button>
             </div>
           )}
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 8 }}>
