@@ -177,8 +177,9 @@ function AuthScreen() {
         <p style={{ fontSize: 12, color: "var(--sub)", marginBottom: 16 }}>
           {mode === "login" ? "Sign in with your username." : "Pick a username to join the feed."}
         </p>
-        <label style={lbl}>Username</label>
+        <label style={lbl} htmlFor="auth-username">Username</label>
         <input
+          id="auth-username"
           value={u}
           onChange={(e) => setU(e.target.value)}
           placeholder="e.g. sneha_r"
@@ -186,8 +187,9 @@ function AuthScreen() {
           style={inp}
           required
         />
-        <label style={{ ...lbl, marginTop: 10 }}>Password</label>
+        <label style={{ ...lbl, marginTop: 10 }} htmlFor="auth-password">Password</label>
         <input
+          id="auth-password"
           type="password"
           value={pw}
           onChange={(e) => setPw(e.target.value)}
