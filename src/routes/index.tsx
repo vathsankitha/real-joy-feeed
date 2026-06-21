@@ -8,12 +8,14 @@ import { fetchAdminData, adminSetBan } from "@/lib/admin.functions";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "CyberGuard — AI Moderated Feed" },
-      { name: "description", content: "Real-time moderated community feed with admin moderation log." },
+      { title: "CyberGuard — AI Moderated Community Feed" },
+      { name: "description", content: "Join CyberGuard's real-time AI-moderated community feed. Post, comment, and like while harassment and harmful content are hidden automatically." },
       { name: "viewport", content: "width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" },
-      { property: "og:title", content: "CyberGuard" },
-      { property: "og:description", content: "Real-time moderated community feed." },
+      { property: "og:title", content: "CyberGuard — AI Moderated Community Feed" },
+      { property: "og:description", content: "Post, comment, and like in a feed where harassment and harmful content are caught and hidden in real time." },
+      { property: "og:url", content: "https://real-joy-feeed.lovable.app/" },
     ],
+    links: [{ rel: "canonical", href: "https://real-joy-feeed.lovable.app/" }],
   }),
   component: App,
 });
@@ -175,8 +177,9 @@ function AuthScreen() {
         <p style={{ fontSize: 12, color: "var(--sub)", marginBottom: 16 }}>
           {mode === "login" ? "Sign in with your username." : "Pick a username to join the feed."}
         </p>
-        <label style={lbl}>Username</label>
+        <label style={lbl} htmlFor="auth-username">Username</label>
         <input
+          id="auth-username"
           value={u}
           onChange={(e) => setU(e.target.value)}
           placeholder="e.g. sneha_r"
@@ -184,8 +187,9 @@ function AuthScreen() {
           style={inp}
           required
         />
-        <label style={{ ...lbl, marginTop: 10 }}>Password</label>
+        <label style={{ ...lbl, marginTop: 10 }} htmlFor="auth-password">Password</label>
         <input
+          id="auth-password"
           type="password"
           value={pw}
           onChange={(e) => setPw(e.target.value)}
@@ -229,7 +233,10 @@ function Main({ userId, username }: { userId: string; username: string }) {
 
   return (
     <div style={{ minHeight: "100vh" }}>
-      <div style={{
+      <h1 style={{ position: "absolute", width: 1, height: 1, padding: 0, margin: -1, overflow: "hidden", clip: "rect(0,0,0,0)", whiteSpace: "nowrap", border: 0 }}>
+        CyberGuard — AI Moderated Community Feed
+      </h1>
+      <header style={{
         background: "var(--card)", borderBottom: "1px solid var(--border)",
         padding: "0 16px", display: "flex", alignItems: "center", position: "sticky",
         top: 0, zIndex: 100,
@@ -246,14 +253,14 @@ function Main({ userId, username }: { userId: string; username: string }) {
         >
           Admin
         </button>
-        <button onClick={signOut} title="Sign out" style={{ marginLeft: 8, background: "none", border: "none", fontSize: 18, cursor: "pointer", color: "var(--sub)", padding: "10px 6px" }}>⎋</button>
-      </div>
+        <button onClick={signOut} aria-label="Sign out" title="Sign out" style={{ marginLeft: 8, background: "none", border: "none", fontSize: 18, cursor: "pointer", color: "var(--sub)", padding: "10px 6px" }}>⎋</button>
+      </header>
 
-      <div style={{ maxWidth: 760, margin: "0 auto", padding: "18px 14px 60px" }}>
+      <main style={{ maxWidth: 760, margin: "0 auto", padding: "18px 14px 60px" }}>
         {tab === "feed" && <Feed userId={userId} username={username} />}
         {tab === "profile" && <Profile userId={userId} username={username} />}
         {tab === "admin" && adminAuthed && adminPw && <Admin password={adminPw} />}
-      </div>
+      </main>
 
       {adminPrompt && (
         <AdminLogin
@@ -540,7 +547,7 @@ function Composer({ userId, username, banned }: { userId: string; username: stri
           {img && (
             <div style={{ position: "relative", marginTop: 8 }}>
               <img src={img} alt="" style={{ width: "100%", borderRadius: 10, display: "block" }} />
-              <button onClick={() => setImg(null)} style={{ position: "absolute", top: 6, right: 6, background: "rgba(0,0,0,.6)", color: "#fff", border: "none", borderRadius: 99, width: 26, height: 26, cursor: "pointer", fontSize: 14 }}>×</button>
+              <button onClick={() => setImg(null)} aria-label="Remove attached image" style={{ position: "absolute", top: 6, right: 6, background: "rgba(0,0,0,.6)", color: "#fff", border: "none", borderRadius: 99, width: 26, height: 26, cursor: "pointer", fontSize: 14 }}>×</button>
             </div>
           )}
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 8 }}>
@@ -579,7 +586,7 @@ function PostCard({
           <div style={{ fontSize: 11, color: "var(--sub)" }}>{timeAgo(post.created_at)}</div>
         </div>
         {isOwner && (
-          <button onClick={deletePost} title="Delete post" style={iconBtn}>🗑️</button>
+          <button onClick={deletePost} aria-label="Delete post" title="Delete post" style={iconBtn}>🗑️</button>
         )}
       </div>
       {post.content && <div style={{ padding: "0 14px 12px", fontSize: 13, lineHeight: 1.55, whiteSpace: "pre-wrap" }}>{post.content}</div>}
@@ -646,7 +653,7 @@ function CommentRow({ c, currentUserId }: { c: Comment; currentUserId: string })
         </div>
       </div>
       <span style={pill("#f0fdf4", "#166534")}>Safe</span>
-      {isOwner && <button onClick={del} title="Delete comment" style={iconBtnSm}>🗑️</button>}
+      {isOwner && <button onClick={del} aria-label="Delete comment" title="Delete comment" style={iconBtnSm}>🗑️</button>}
     </div>
   );
 }
