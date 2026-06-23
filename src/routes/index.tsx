@@ -105,7 +105,6 @@ async function fileToDataUrl(file: File, maxSize = 1200, quality = 0.8): Promise
 function App() {
   const [userId, setUserId] = useState<string | null>(null);
   const [username, setUsername] = useState<string | null>(null);
-  const [ready, setReady] = useState(false);
 
   useEffect(() => {
     let mounted = true;
@@ -116,6 +115,7 @@ function App() {
         const session = sessionResult?.data.session;
         if (session && mounted) {
           setUserId(session.user.id);
+          setUsername(session.user.email?.split("@")[0] ?? "user");
           const profileResult = await withTimeout(
             supabase.from("profiles").select("username").eq("id", session.user.id).maybeSingle(),
           );
@@ -123,8 +123,6 @@ function App() {
         }
       } catch (error) {
         console.warn("Auth session check failed", error);
-      } finally {
-        if (mounted) setReady(true);
       }
     }
 
@@ -132,8 +130,11 @@ function App() {
     const { data: sub } = supabase.auth.onAuthStateChange(async (_e, session) => {
       if (session) {
         setUserId(session.user.id);
-        const { data: p } = await supabase.from("profiles").select("username").eq("id", session.user.id).maybeSingle();
-        setUsername(p?.username ?? session.user.email?.split("@")[0] ?? "user");
+        setUsername(session.user.email?.split("@")[0] ?? "user");
+        const profileResult = await withTimeout(
+          supabase.from("profiles").select("username").eq("id", session.user.id).maybeSingle(),
+        );
+        if (mounted) setUsername(profileResult?.data?.username ?? session.user.email?.split("@")[0] ?? "user");
       } else {
         setUserId(null);
         setUsername(null);
@@ -145,7 +146,6 @@ function App() {
     };
   }, []);
 
-  if (!ready) return <div style={{ padding: 40, textAlign: "center", color: "#666" }}>Loading…</div>;
   if (!userId || !username) return <AuthScreen />;
   return <Main userId={userId} username={username} />;
 }
