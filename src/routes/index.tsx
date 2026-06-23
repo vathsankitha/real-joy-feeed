@@ -76,9 +76,9 @@ function timeAgo(iso: string) {
 function usernameToEmail(u: string) {
   return `${u.toLowerCase().replace(/[^a-z0-9_]/g, "_")}@cyberguard.app`;
 }
-function withTimeout<T>(promise: Promise<T>, ms = 3500): Promise<T | null> {
+function withTimeout<T>(promise: PromiseLike<T>, ms = 3500): Promise<T | null> {
   return Promise.race([
-    promise,
+    Promise.resolve(promise),
     new Promise<null>((resolve) => window.setTimeout(() => resolve(null), ms)),
   ]);
 }
