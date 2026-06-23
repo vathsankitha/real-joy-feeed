@@ -76,6 +76,12 @@ function timeAgo(iso: string) {
 function usernameToEmail(u: string) {
   return `${u.toLowerCase().replace(/[^a-z0-9_]/g, "_")}@cyberguard.app`;
 }
+function withTimeout<T>(promise: PromiseLike<T>, ms = 3500): Promise<T | null> {
+  return Promise.race([
+    Promise.resolve(promise),
+    new Promise<null>((resolve) => window.setTimeout(() => resolve(null), ms)),
+  ]);
+}
 async function fileToDataUrl(file: File, maxSize = 1200, quality = 0.8): Promise<string> {
   const img = await new Promise<HTMLImageElement>((res, rej) => {
     const i = new Image();
@@ -99,31 +105,47 @@ async function fileToDataUrl(file: File, maxSize = 1200, quality = 0.8): Promise
 function App() {
   const [userId, setUserId] = useState<string | null>(null);
   const [username, setUsername] = useState<string | null>(null);
-  const [ready, setReady] = useState(false);
 
   useEffect(() => {
-    supabase.auth.getSession().then(async ({ data }) => {
-      if (data.session) {
-        setUserId(data.session.user.id);
-        const { data: p } = await supabase.from("profiles").select("username").eq("id", data.session.user.id).maybeSingle();
-        setUsername(p?.username ?? data.session.user.email?.split("@")[0] ?? "user");
+    let mounted = true;
+
+    async function loadSession() {
+      try {
+        const sessionResult = await withTimeout(supabase.auth.getSession());
+        const session = sessionResult?.data.session;
+        if (session && mounted) {
+          setUserId(session.user.id);
+          setUsername(session.user.email?.split("@")[0] ?? "user");
+          const profileResult = await withTimeout(
+            supabase.from("profiles").select("username").eq("id", session.user.id).maybeSingle(),
+          );
+          if (mounted) setUsername(profileResult?.data?.username ?? session.user.email?.split("@")[0] ?? "user");
+        }
+      } catch (error) {
+        console.warn("Auth session check failed", error);
       }
-      setReady(true);
-    });
+    }
+
+    void loadSession();
     const { data: sub } = supabase.auth.onAuthStateChange(async (_e, session) => {
       if (session) {
         setUserId(session.user.id);
-        const { data: p } = await supabase.from("profiles").select("username").eq("id", session.user.id).maybeSingle();
-        setUsername(p?.username ?? session.user.email?.split("@")[0] ?? "user");
+        setUsername(session.user.email?.split("@")[0] ?? "user");
+        const profileResult = await withTimeout(
+          supabase.from("profiles").select("username").eq("id", session.user.id).maybeSingle(),
+        );
+        if (mounted) setUsername(profileResult?.data?.username ?? session.user.email?.split("@")[0] ?? "user");
       } else {
         setUserId(null);
         setUsername(null);
       }
     });
-    return () => sub.subscription.unsubscribe();
+    return () => {
+      mounted = false;
+      sub.subscription.unsubscribe();
+    };
   }, []);
 
-  if (!ready) return <div style={{ padding: 40, textAlign: "center", color: "#666" }}>Loading…</div>;
   if (!userId || !username) return <AuthScreen />;
   return <Main userId={userId} username={username} />;
 }
