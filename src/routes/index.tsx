@@ -3,6 +3,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { scanComment, type Severity } from "@/lib/moderation";
+import { classifyCommentAI } from "@/lib/moderate-ai.functions";
 import { fetchAdminData, adminSetBan } from "@/lib/admin.functions";
 
 export const Route = createFileRoute("/")({
@@ -693,13 +694,46 @@ function CommentInput({
     setBusy(true);
     setNotice(null);
 
-    // Optional pre-check for instant UI feedback; the database re-scans server-side.
+    // Pre-check with regex for instant feedback; the database also re-scans server-side.
     const preview = scanComment(t);
 
-    const { data, error } = await supabase.rpc("submit_comment", {
-      _post_id: postId,
-      _content: t,
-    });
+    // AI second-pass classification (catches nuanced bullying/hate the regex misses).
+    // Skipped if regex already flagged — submit_comment will hide it server-side.
+    let aiHidden = false;
+    let aiCategory: string | null = null;
+    let aiSeverity: string | null = null;
+    if (!preview.hidden) {
+      try {
+        const ai = await classifyCommentAI({ data: { text: t } });
+        if (ai?.hidden) {
+          aiHidden = true;
+          aiCategory = `AI: ${ai.category}`;
+          aiSeverity = ai.severity === "none" ? "moderate" : ai.severity;
+        }
+      } catch (e) {
+        console.warn("AI moderation skipped:", e);
+      }
+    }
+
+    let data: { hidden?: boolean; category?: string | null; count?: number; banned?: boolean } | null = null;
+    let error: { message: string } | null = null;
+
+    if (aiHidden) {
+      // AI flagged but regex didn't — submit as hidden via the moderated RPC (issues a strike).
+      const res = await supabase.rpc("submit_moderated_comment", {
+        _post_id: postId,
+        _content: t,
+        _hidden: true,
+        _category: aiCategory,
+        _severity: aiSeverity,
+      });
+      data = res.data as typeof data;
+      error = res.error;
+    } else {
+      const res = await supabase.rpc("submit_comment", { _post_id: postId, _content: t });
+      data = res.data as typeof data;
+      error = res.error;
+    }
 
     if (error) {
       alert(error.message);
@@ -708,8 +742,8 @@ function CommentInput({
     }
 
     const result = (data ?? {}) as { hidden?: boolean; category?: string | null; count?: number; banned?: boolean };
-    const wasHidden = result.hidden ?? preview.hidden;
-    const cat = result.category ?? preview.category;
+    const wasHidden = result.hidden ?? aiHidden ?? preview.hidden;
+    const cat = result.category ?? aiCategory ?? preview.category;
 
     if (wasHidden) {
       onAfterStrike();
