@@ -724,8 +724,8 @@ function CommentInput({
         _post_id: postId,
         _content: t,
         _hidden: true,
-        _category: aiCategory,
-        _severity: aiSeverity,
+        _category: aiCategory ?? "AI: flagged",
+        _severity: aiSeverity ?? "moderate",
       });
       data = res.data as typeof data;
       error = res.error;
