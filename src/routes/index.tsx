@@ -209,6 +209,7 @@ function AuthScreen() {
           autoComplete="username"
           style={inp}
           required
+          suppressHydrationWarning
         />
         <label style={{ ...lbl, marginTop: 10 }} htmlFor="auth-password">Password</label>
         <input
@@ -220,19 +221,21 @@ function AuthScreen() {
           autoComplete={mode === "login" ? "current-password" : "new-password"}
           style={inp}
           required
+          suppressHydrationWarning
         />
         {err && (
           <div style={{ marginTop: 10, fontSize: 12, color: "var(--danger-text)", background: "var(--danger-bg)", border: "1px solid var(--danger-border)", padding: "8px 10px", borderRadius: 8 }}>
             {err}
           </div>
         )}
-        <button disabled={busy} type="submit" style={{ ...btnPrimary, marginTop: 14, width: "100%" }}>
+        <button disabled={busy} type="submit" style={{ ...btnPrimary, marginTop: 14, width: "100%" }} suppressHydrationWarning>
           {busy ? "Please wait…" : mode === "login" ? "Sign in" : "Create account"}
         </button>
         <button
           type="button"
           onClick={() => { setMode(mode === "login" ? "signup" : "login"); setErr(null); }}
           style={{ marginTop: 10, width: "100%", background: "none", border: "none", color: "var(--accent)", fontSize: 12, cursor: "pointer" }}
+          suppressHydrationWarning
         >
           {mode === "login" ? "New here? Create an account" : "Already have one? Sign in"}
         </button>
