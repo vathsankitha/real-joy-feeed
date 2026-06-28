@@ -29,16 +29,16 @@ export const classifyCommentAI = createServerFn({ method: "POST" })
     }
     try {
       const gateway = createLovableAiGatewayProvider(key);
-      const { experimental_output } = await generateText({
+      const { output } = await generateText({
         model: gateway("openai/gpt-5-mini"),
-        experimental_output: Output.object({ schema: Schema }),
+        output: Output.object({ schema: Schema }),
         system:
           "You are a strict community moderator. Classify the user comment for: harassment, hate speech, self-harm encouragement, violent threats, or sexual harassment. " +
           "Set hidden=true if the comment targets, demeans, threatens, or encourages harm toward a person or group, even subtly or sarcastically. " +
           "Pick the best category (use 'safe' only when hidden=false). Severity: mild/moderate/severe when hidden=true, else 'none'. Keep reason under 20 words.",
         prompt: `Comment:\n"""${data.text}"""`,
       });
-      return experimental_output;
+      return output;
     } catch (e) {
       console.error("AI moderation failed:", e);
       return { hidden: false, category: "safe", severity: "none", reason: "ai_error" };
